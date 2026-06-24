@@ -39,4 +39,8 @@ def handle_photo(message):
         bot.reply_to(message, f"⚠️ Error al procesar: {str(e)}")
 
 print("Bot ShoppingShieldAI activo en Render.")
-bot.polling()
+# Sustituye la última línea (bot.polling()) por esto:
+if __name__ == '__main__':
+    print("Iniciando el bot...")
+    bot.remove_webhook() # Esto ayuda a liberar cualquier conexión colgada
+    bot.polling(none_stop=True, interval=0, timeout=20)

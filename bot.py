@@ -3,30 +3,35 @@ import telebot
 import google.generativeai as genai
 import PIL.Image
 import io
-from flask import Flask # Necesitas instalar flask en tu requirements.txt
-from threading import Thread
 
-# Configuración
+# 1. Configuración desde variables de entorno de Render
 API_KEY = os.environ.get("API_KEY")
 TOKEN = os.environ.get("TELEGRAM_TOKEN")
+
+# Configurar servicios
 genai.configure(api_key=API_KEY)
 bot = telebot.TeleBot(TOKEN)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-# Servidor Flask minúsculo para que Render no cierre el bot
-app = Flask(__name__)
-@app.route('/')
-def home():
-    return "Bot activo"
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    bot.reply_to(message, "¡Hola! Envíame una foto de un producto y lo analizaré.")
 
-def run_flask():
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+@bot.message_handler(content_types=['photo'])
+def handle_photo(message):
+    try:
+        bot.reply_to(message, "🔍 Analizando...")
+        file_info = bot.get_file(message.photo[-1].file_id)
+        downloaded_file = bot.download_file(file_info.file_path)
+        img = PIL.Image.open(io.BytesIO(downloaded_file))
+        
+        response = model.generate_content(["Describe este producto", img])
+        bot.reply_to(message, response.text)
+    except Exception as e:
+        bot.reply_to(message, f"Error en IA: {str(e)}")
 
-# Lógica del bot... (tu código anterior de handle_photo aquí)
-
+# 2. LA CLAVE PARA EL ERROR 409
 if __name__ == '__main__':
-    # Arrancamos el servidor web en un hilo separado
-    Thread(target=run_flask).start()
-    # Arrancamos el bot
-    bot.remove_webhook()
-    bot.polling(none_stop=True)
+    print("Iniciando bot...")
+    bot.remove_webhook()  # Esto borra cualquier conexión previa en Telegram
+    bot.polling(none_stop=True, interval=0, timeout=20)

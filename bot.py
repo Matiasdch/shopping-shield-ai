@@ -14,7 +14,7 @@ genai.configure(api_key=API_KEY)
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
 # 2. Inicialización del modelo
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
